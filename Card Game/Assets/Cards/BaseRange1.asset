@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66ff952009c8d71498790c72fc5d9394, type: 3}
+  m_Name: BaseRange1
+  m_EditorClassIdentifier: 
+  cardID: 4
+  name: Range Unit 1
+  description: 'Description Here Description Here Description Here Description Here '
+  cardFaction: 0
+  cardType: 1
+  typeImage: {fileID: 21300000, guid: 37967dc110c38fa438adb4cf1319b92c, type: 3}
+  epic: 0
+  attack: 2
+  artwork: {fileID: 21300000, guid: 7e1859a20c65e0244b5d0631bc76039b, type: 3}
+  skill: 0
