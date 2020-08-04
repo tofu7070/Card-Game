@@ -7,6 +7,7 @@ public class BriefCardDisplay : MonoBehaviour
 {
     public int cardID;
     public CardData card;
+    public bool epic;
     public Text attackText;
     public Image epicOutline;
     public Image artworkimage;
@@ -23,6 +24,7 @@ public class BriefCardDisplay : MonoBehaviour
     public void InistiateCard()
     {
         cardID = card.cardID;
+        epic = card.epic;
         artworkimage.sprite = card.artwork;
         cardType.sprite = card.typeImage;
         attackText.text = card.attack.ToString();

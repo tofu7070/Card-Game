@@ -1,16 +1,23 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
+/// <summary>
+/// 功能为：生成手牌
+/// 凸显手牌，显示手牌详细信息
+/// </summary>
 public class CardDeck : MonoBehaviour
 {
     public List<int> handCardsID = new List<int>();
     public List<GameObject> handCardsObj = new List<GameObject>();
 
     public GameObject cardPrefabs;
+    public GameObject specialCardPrefabs;
    
     public Transform handTransform;
 
@@ -31,6 +38,7 @@ public class CardDeck : MonoBehaviour
         layout = this.GetComponent<GridLayoutGroup>();
         rp = FindObjectOfType<RightPanel>().GetComponent<RightPanel>();
         tp = FindObjectOfType<TablePanel>().GetComponent<TablePanel>();
+        tp.cd = this;
     }
 
     // Update is called once per frame
@@ -38,17 +46,41 @@ public class CardDeck : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Alpha0))// 测试功能 生成随机的卡片
         {
-            int num = Random.Range(1, 6);
-            Debug.Log("Generate a card " + num.ToString());
-            GeneraterCard(num);
-            StartCoroutine(EndFixcardSpacing());
+            UnitCard();
         }
+
+        if (Input.GetKeyDown(KeyCode.Alpha9))
+        {
+            SpecialCard();
+        }
+    }
+
+    public void UnitCard()//测试功能
+    {
+        int num = Random.Range(1, 6);
+        Debug.Log("Generate a card " + num.ToString());
+        GeneraterCard(num);
+        StartCoroutine(EndFixcardSpacing());
+    }
+
+    public void SpecialCard()//Start with 900
+    {
+        Debug.Log("Generate a special card ");
+        GeneraterCard(900);
+        StartCoroutine(EndFixcardSpacing());
     }
 
     public void GeneraterCard(int ID)
     {
         string cardID = "Card" + ID.ToString();
-        LoadCard(cardID);
+        if (ID >= 900)
+        {
+            LoadSpecialCard(cardID);
+        }
+        else
+        {
+            LoadCard(cardID);
+        }
     }
 
     public void LoadCard(string cardID)//Using unity addressable to instantiate cards
@@ -73,7 +105,30 @@ public class CardDeck : MonoBehaviour
             else
                 Debug.Log("<color=yellow> Can not find Card Data </color>");
         }
+    }
 
+    public void LoadSpecialCard(string cardID)
+    {
+        Addressables.LoadAssetAsync<SpecialCardData>(cardID).Completed += OnLoadDone;
+
+        void OnLoadDone(AsyncOperationHandle<SpecialCardData> handle)
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject card = Instantiate(specialCardPrefabs, handTransform);
+                BriefSpecialCardDisplay BCD = card.GetComponent<BriefSpecialCardDisplay>();
+                BCD.card = handle.Result;
+                BCD.InistiateCard();
+                BCD.handCards = this;
+                handCardNumber++;
+                handCardsID.Add(BCD.cardID);
+                handCardsObj.Add(card);
+                oriYPosition = card.transform.position.y;
+                FixcardSpacing();
+            }
+            else
+                Debug.Log("<color=yellow> Can not find Special Card Data </color>");
+        }
     }
 
     void FixcardSpacing()//在卡片生成超过10个以后改变卡片之间间距
@@ -132,9 +187,47 @@ public class CardDeck : MonoBehaviour
         }
     }
 
-    void PlaceACard()
+    void PlaceACard()//需要添加特殊卡片的代码
     {
-        CardData data = handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card;
+        try//执行单位牌的输出
+        {
+            CardData data = handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card;
+            int cardid = data.cardID;
+            GameObject temp = handCardsObj[selectedIndex];
+            handCardsObj.Remove(handCardsObj[selectedIndex]);
+            handCardsID.RemoveAt(selectedIndex);
+            selectedIndex = 100;
+            Destroy(temp);
+            FixcardSpacing();
+            tp.ReceiveACard(data);
+        }
+        catch (Exception e)
+        {
+            Debug.Log("This is a special card " + e);
+        }
+        
+    }
+
+    void SendHeightLightInfo()//显示卡片详细信息在右手边的ui上
+    {
+        if (rp != null)
+        {
+            if (handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>() != null)
+            {
+                rp.ShowCardInfo(handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card);
+            }
+            else if (handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>() != null)
+            {
+                rp.ShowCardInfo(handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>().card);
+                //开启桌面的点击功能
+                tp.UnlockAllYourTables();
+            }
+        }
+    }
+
+    public void ReceivePanelInfo(int num)//得到TablePanel传来的值并给相对应的位置发送一张特殊卡片
+    {
+        SpecialCardData data = handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>().card;
         int cardid = data.cardID;
         GameObject temp = handCardsObj[selectedIndex];
         handCardsObj.Remove(handCardsObj[selectedIndex]);
@@ -142,17 +235,8 @@ public class CardDeck : MonoBehaviour
         selectedIndex = 100;
         Destroy(temp);
         FixcardSpacing();
-        tp.ReceiveACard(data);
+        tp.ReceiveACard(data,num);
     }
-
-    void SendHeightLightInfo()//显示卡片详细信息在右手边的ui上
-    {
-        if (rp != null)
-        {
-            rp.ShowCardInfo(handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card);
-        }
-    }
-
     public void HideHeightLightInfo()
     {
         rp.HideCardInfo();

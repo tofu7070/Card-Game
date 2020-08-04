@@ -5,6 +5,7 @@ using UnityEngine;
 public class RightPanel : MonoBehaviour
 {
     public GameObject cardPrefabs;
+    public GameObject specialCardPrefabs;
 
     public List<int> deckCards;
 
@@ -12,7 +13,7 @@ public class RightPanel : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        cardPrefabs.SetActive(false);
+        HideCardInfo();
     }
 
     // Update is called once per frame
@@ -21,7 +22,7 @@ public class RightPanel : MonoBehaviour
         
     }
 
-    public void ShowCardInfo(CardData data)
+    public void ShowCardInfo(CardData data)//这个为单位牌
     {
         CardDisplay CD = cardPrefabs.GetComponent<CardDisplay>();
         CD.card = data;
@@ -29,8 +30,17 @@ public class RightPanel : MonoBehaviour
         cardPrefabs.SetActive(true);
     }
 
+    public void ShowCardInfo(SpecialCardData data)//这个为特殊牌
+    {
+        SpecialCardDisplay SCD = specialCardPrefabs.GetComponent<SpecialCardDisplay>();
+        SCD.card = data;
+        SCD.InistiateCard();
+        specialCardPrefabs.SetActive(true);
+    }
+
     public void HideCardInfo()
     {
         cardPrefabs.SetActive(false);
+        specialCardPrefabs.SetActive(false);
     }
 }
