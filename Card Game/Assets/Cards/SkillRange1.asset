@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66ff952009c8d71498790c72fc5d9394, type: 3}
+  m_Name: SkillRange1
+  m_EditorClassIdentifier: 
+  cardID: 6
+  name: Range Unit Skill 1
+  description: This Unit have Group up skills (Group up with same name unit will
+    double power)
+  cardFaction: 0
+  cardType: 1
+  typeImage: {fileID: 21300000, guid: 37967dc110c38fa438adb4cf1319b92c, type: 3}
+  epic: 0
+  attack: 2
+  artwork: {fileID: 21300000, guid: 92e84944a0591e94398f28e9b57094a5, type: 3}
+  skill: 1
+  skillImage: {fileID: 21300000, guid: 49d0d52815d7fb64ea2207e4bae38492, type: 3}

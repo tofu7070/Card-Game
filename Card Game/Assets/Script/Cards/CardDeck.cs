@@ -53,19 +53,24 @@ public class CardDeck : MonoBehaviour
         {
             SpecialCard();
         }
+        if (Input.GetKeyDown(KeyCode.Alpha8))
+        {
+            GeneraterCard(6);
+            StartCoroutine(EndFixcardSpacing());
+        }
     }
 
     public void UnitCard()//测试功能
     {
         int num = Random.Range(1, 6);
-        Debug.Log("Generate a card " + num.ToString());
+        //Debug.Log("Generate a card " + num.ToString());
         GeneraterCard(num);
         StartCoroutine(EndFixcardSpacing());
     }
 
     public void SpecialCard()//Start with 900
     {
-        Debug.Log("Generate a special card ");
+        //Debug.Log("Generate a special card ");
         GeneraterCard(900);
         StartCoroutine(EndFixcardSpacing());
     }
@@ -160,7 +165,7 @@ public class CardDeck : MonoBehaviour
             selectedIndex = 100;
         }
     }
-    public void HighLightCards(GameObject selectedCard)//在选择了卡片以后将所选的卡片向上移动
+    public void HighLightCards(GameObject selectedCard)//在选择了卡片以后将所选的卡片向上移动(第一次点击)
     {
         for (int i = 0; i < handCardsObj.Count; i++)
         {
@@ -215,6 +220,8 @@ public class CardDeck : MonoBehaviour
             if (handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>() != null)
             {
                 rp.ShowCardInfo(handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card);
+                tp.LockAllYourTables();
+                tp.UnlockYourTable(handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card.cardType);
             }
             else if (handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>() != null)
             {
@@ -225,17 +232,34 @@ public class CardDeck : MonoBehaviour
         }
     }
 
-    public void ReceivePanelInfo(int num)//得到TablePanel传来的值并给相对应的位置发送一张特殊卡片
+    public void ReceivePanelInfo(int num)//得到TablePanel传来的值并给相对应的位置发送一张卡片
     {
-        SpecialCardData data = handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>().card;
-        int cardid = data.cardID;
-        GameObject temp = handCardsObj[selectedIndex];
-        handCardsObj.Remove(handCardsObj[selectedIndex]);
-        handCardsID.RemoveAt(selectedIndex);
-        selectedIndex = 100;
-        Destroy(temp);
-        FixcardSpacing();
-        tp.ReceiveACard(data,num);
+        BriefCardDisplay BCD = handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>();
+        if (BCD != null)
+        {
+            CardData data = handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card;
+            int cardid = data.cardID;
+            GameObject temp = handCardsObj[selectedIndex];
+            handCardsObj.Remove(handCardsObj[selectedIndex]);
+            handCardsID.RemoveAt(selectedIndex);
+            selectedIndex = 100;
+            Destroy(temp);
+            FixcardSpacing();
+            tp.ReceiveACard(data,num);
+        }
+        else//特殊卡片情况
+        {
+            SpecialCardData data = handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>().card;
+            int cardid = data.cardID;
+            GameObject temp = handCardsObj[selectedIndex];
+            handCardsObj.Remove(handCardsObj[selectedIndex]);
+            handCardsID.RemoveAt(selectedIndex);
+            selectedIndex = 100;
+            Destroy(temp);
+            FixcardSpacing();
+            tp.ReceiveACard(data, num);
+        }
+        
     }
     public void HideHeightLightInfo()
     {

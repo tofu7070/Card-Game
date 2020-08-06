@@ -13,11 +13,12 @@ public class CardDisplay : MonoBehaviour
     public Image epicOutline;
     public Image artworkimage;
     public Image cardType;
+    public CardData.Skills skills;
+    public GameObject skillImage;
+
 
     void Start()
     {
-        //if(card != null)
-            //InistiateCard();
         
     }
     
@@ -30,5 +31,14 @@ public class CardDisplay : MonoBehaviour
         attackText.text = card.attack.ToString();
         if (card.epic)
             epicOutline.color = Color.yellow;
+        if (skills != CardData.Skills.None)
+        {
+            skillImage.SetActive(true);//显示技能并且赋给技能图标
+            skillImage.transform.Find("Image").GetComponent<Image>().sprite = card.skillImage;
+        }
+        else
+        {
+            skillImage.SetActive(false);
+        }
     }
 }

@@ -86,7 +86,13 @@ public class TablePanel : MonoBehaviour
         {
             LockAllYourTables();
         }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            ClickSelectedPanel();
+        }
     }
+
 
     #region 初始化
     void InitiateCardNumbers()//hard coding :) 初始化场上卡片的
@@ -116,27 +122,50 @@ public class TablePanel : MonoBehaviour
         }
     }
     #endregion
-    public void ReceiveACard(CardData data)//双击卡片自动放置
+    //-------------------------------------------------------------------------
+    public void ReceiveACard(CardData data)//添加卡片 双击卡片自动放置方法
     {
         GameObject card = Instantiate(cardPrefabs, CardTypeTransform(data.cardType));
         BriefCardDisplay CD = card.GetComponent<BriefCardDisplay>();
         CD.card = data;
         CD.InistiateCard();
         CardTypePanel(data.cardType).Add(card);
+        FixCardSpacing(data.cardType);
+        LockAllYourTables();//放置完成了卡片以后关闭event trigger
+        //此处添加技能的判定
+        ActivateCardSkill(CD.skills, data.cardType);
         StartCoroutine(DoingCardCacaulation(data.cardType));
     }
 
-    public void ReceiveACard(SpecialCardData data,int num)//双击卡片自动放置
+    public void ReceiveACard(CardData data, int num)//选择一个位置以后放置特护的卡片
     {
-        GameObject card = Instantiate(specialCardPrefabs, CardTypeTransform(num));
-        BriefSpecialCardDisplay BCD = card.GetComponent<BriefSpecialCardDisplay>();
-        BCD.card = data;
-        BCD.InistiateCard();
+        GameObject card = Instantiate(cardPrefabs, CardTypeTransform(num));
+        BriefCardDisplay CD = card.GetComponent<BriefCardDisplay>();
+        CD.card = data;
+        CD.InistiateCard();
         CardTypePanel(num).Add(card);
-        StartCoroutine(DoingCardCacaulation(num));
+        FixCardSpacing(num);
+        if (powerUps.ybool[num])
+            CD.isPowerUp = true;
         LockAllYourTables();//放置完成了卡片以后关闭event trigger
+        //此处添加技能的判定
+        ActivateCardSkill(CD.skills, num);
+        StartCoroutine(DoingCardCacaulation(num));
     }
 
+    public void ReceiveACard(SpecialCardData data,int num)//选择一个位置以后放置特护的卡片
+    {
+        powerUps.ybool[num] = true;//将增幅的标记改为true
+        powerUps.yUP[num].SetActive(true);
+        foreach (var card in CardTypePanel(num))
+        {
+            card.GetComponent<BriefCardDisplay>().isPowerUp = true;
+        }       
+        LockAllYourTables();//放置完成了卡片以后关闭event trigger
+        StartCoroutine(DoingCardCacaulation(num));
+    }
+
+    #region 获取信息
     Transform CardTypeTransform(int type)//给出卡片放置的位置
     {
         Transform location = panelTransform.y1;
@@ -155,7 +184,19 @@ public class TablePanel : MonoBehaviour
 
         return location;
     }
+    int CardTypeTransform(Transform slot)//给出卡片放置的位置
+    {
+        int index = 0;
 
+        if (slot == panelTransform.y1)
+            index = 0;
+        if (slot == panelTransform.y2)
+            index = 1;
+        if (slot == panelTransform.y3)
+            index = 2;
+
+        return index;
+    }
     List<GameObject> CardTypePanel(int type)//给出存放卡片gameobject的地址
     {
         switch (type)
@@ -186,10 +227,31 @@ public class TablePanel : MonoBehaviour
         }
     }
 
-   
+
+    #endregion
+
+    #region 计算功能
+    void FixCardSpacing(int type)//在卡片生成超过10个以后改变卡片之间间距
+    {
+        int num = CardTypePanel(type).Count;
+        if (num > 8)
+        {
+            GridLayoutGroup layout = CardTypeTransform(type).GetComponent<GridLayoutGroup>();
+            Vector2 spacing = layout.spacing;
+            float spacex = spacing.x;
+            spacex = (900 - 100 * num) / (num - 1);
+            layout.spacing = new Vector2(spacex, spacing.y);
+        }
+    }
+
     IEnumerator DoingCardCacaulation(int type)//卡片进行计算之前的延迟
     {
         yield return new WaitForSeconds(0.2f);
+        CaclulateCards(type);
+    }
+    IEnumerator DoingCardCacaulation(int type, float time)//等待输入的时间然后 卡片进行计算 
+    {
+        yield return new WaitForSeconds(time);
         CaclulateCards(type);
     }
     void CaclulateCards(int type)//计算单行的卡片数值，可以扩展成计算全部卡片的数值
@@ -197,35 +259,92 @@ public class TablePanel : MonoBehaviour
         int num = 0;
         int normalcard = 0;
         int epiccard = 0;
-        bool isPowerUp = false;
         foreach (var card in CardTypePanel(type))
         {
             BriefCardDisplay BCD = card.GetComponent<BriefCardDisplay>();
-            if ( BCD!= null)
+            if (BCD != null)
             {
                 if (BCD.epic)
-                    epiccard += card.GetComponent<BriefCardDisplay>().attackDamage;
+                    epiccard += BCD.attackDamage;
                 else
-                    normalcard += card.GetComponent<BriefCardDisplay>().attackDamage;
+                {
+                    normalcard += BCD.attackDamage * BCD.stack;
+                    BCD.RefreshCardText();
+                }
             }
-            else
-            {
-                if (card.GetComponent<BriefSpecialCardDisplay>() != null)
-                    isPowerUp = true;
-            }    
-            
         }
-        if (isPowerUp)
+        if (powerUps.ybool[type])
             normalcard = normalcard * 2;
         num = normalcard + epiccard;
         CardNumberText(type).text = num.ToString();
     }
 
-    public void ReceiveYourTableData(int num)//点击己方桌面以后返回数据
+    public void ActivateCardSkill(CardData.Skills skill, int type)//根据卡片技能进行计算
     {
-        Debug.Log("Your table Clicked" + num);
-        cd.ReceivePanelInfo(num);
+        switch (skill)
+        {
+            case CardData.Skills.None:
+                //如果没有技能直接退出
+                return;
+            case CardData.Skills.Groupup:
+                //进行卡片的组合技能计算
+                Dictionary<string,int> cardDic = new Dictionary<string, int>();//字符串为卡片的名称，整形为数量
+                bool haveGroupCard = false;
+                foreach (var card in CardTypePanel(type))
+                {
+                    BriefCardDisplay BCD = card.GetComponent<BriefCardDisplay>();
+                    if (BCD != null)
+                    {
+                        string cardName = card.GetComponent<BriefCardDisplay>().name;
+                        if (cardDic.ContainsKey(cardName))
+                        {
+                            cardDic[cardName] += 1;
+                            haveGroupCard = true;
+                        }
+                        else
+                        {
+                            cardDic.Add(cardName,1);
+                        }
+                    }
+                }
+                if (haveGroupCard)
+                {
+                    List<BriefCardDisplay> BCDs = new List<BriefCardDisplay>();
+                    foreach (var card in CardTypePanel(type))
+                    {
+                        BriefCardDisplay BCD = card.GetComponent<BriefCardDisplay>();
+                        if (BCD != null)
+                        {
+                            string cardName = card.GetComponent<BriefCardDisplay>().name;
+                            if (cardDic[cardName] > 1)
+                            {
+                                BCD.stack = cardDic[cardName];//修改同名卡片堆积数量
+                                BCDs.Add(BCD);//登记卡片
+                            }     
+                        }
+                    }
+                    //在这里添加卡片登记以后的动画效果 如果是相同的数值则不播放动画
+                    foreach (var cardBDC in BCDs)
+                    {
+                        cardBDC.PlayNumberPopAnimation();
+                    }
+                }
+                
+                break;
+
+        }
     }
+
+    #endregion
+
+
+
+
+    //public void ReceiveYourTableData(int num)//点击己方桌面以后返回数据
+    //{
+    //    Debug.Log("Your table Clicked" + num);
+    //    cd.ReceivePanelInfo(num);
+    //}
 
     public void ReceiveOpponentTableData(int num)//点击对手桌面以后返回数据
     {
@@ -234,14 +353,31 @@ public class TablePanel : MonoBehaviour
 
     #region 根据不同的情况解锁相应的桌面点击
 
+    public void UnlockYourTable(int type)
+    {
+        AddTriggerEventsForSlot(CardTypeTransform(type));
+    }
     public void UnlockAllYourTables()
     {
-        AddTriggerEventsForSlot(panelTransform.y1);
-        
+        if (!powerUps.ybool[0])//这里可以添加别的条件，如果已经增幅则不显示可以增幅
+        {
+            AddTriggerEventsForSlot(panelTransform.y1);
+        }
+        if (!powerUps.ybool[1])
+        {
+            AddTriggerEventsForSlot(panelTransform.y2);
+        }
+        if (!powerUps.ybool[2])
+        {
+            AddTriggerEventsForSlot(panelTransform.y3);
+        }
+
     }
-    private void LockAllYourTables()
+    public void LockAllYourTables()
     {
         RemoveTriggerEventFromSlot(panelTransform.y1);
+        RemoveTriggerEventFromSlot(panelTransform.y2);
+        RemoveTriggerEventFromSlot(panelTransform.y3);
     }
 
     private void AddTriggerEventsForSlot(Transform slot)//添加event trigger 加入鼠标进出，还有点击event
@@ -249,11 +385,12 @@ public class TablePanel : MonoBehaviour
         EventTrigger trigger = slot.GetComponent<EventTrigger>();
         if (trigger == null)//如果存在event trigger则不添加
         {
+            int slotIndex = CardTypeTransform(slot);
             trigger = slot.gameObject.AddComponent<EventTrigger>();
-            EventTrigger.Entry entry = new EventTrigger.Entry();
-            entry.eventID = EventTriggerType.PointerClick;
-            entry.callback.AddListener((eventData) => { ReceiveYourTableData(0); });
-            trigger.triggers.Add(entry);
+            //EventTrigger.Entry entry = new EventTrigger.Entry();
+            //entry.eventID = EventTriggerType.PointerDown;
+            //entry.callback.AddListener((eventData) => { ReceiveYourTableData(slotIndex); DimSlot(slot); });
+            //trigger.triggers.Add(entry);
             EventTrigger.Entry entry2 = new EventTrigger.Entry();
             entry2.eventID = EventTriggerType.PointerEnter;
             entry2.callback.AddListener((eventData) => { HeightlightSlot(slot); });
@@ -276,6 +413,7 @@ public class TablePanel : MonoBehaviour
 
     private void HeightlightSlot(Transform slot)
     {
+        selectedPanel = slot;
         Debug.Log("Pointer Enter");
         Color newcolor = slot.GetComponent<Image>().color;
         newcolor.a = alphaNum + 0.2f;
@@ -284,10 +422,32 @@ public class TablePanel : MonoBehaviour
 
     private void DimSlot(Transform slot)
     {
+        selectedPanel = null;
         Debug.Log("Pointer Exit");
         Color newcolor = slot.GetComponent<Image>().color;
         newcolor.a = alphaNum;
         slot.GetComponent<Image>().color = newcolor;
     }
+
+    private int RetrunSlotInfo(Transform slot)
+    {
+        int num = 0;
+
+        return num;
+    }
+
+    private Transform selectedPanel;
+
+    private void ClickSelectedPanel()//改写的点击方法 
+    {
+        if (selectedPanel != null)
+        {
+            int num = CardTypeTransform(selectedPanel);
+            Debug.Log("Your clicked a Select panel" + num);
+            cd.ReceivePanelInfo(num);
+            DimSlot(selectedPanel);
+        }
+    }
+
     #endregion
 }

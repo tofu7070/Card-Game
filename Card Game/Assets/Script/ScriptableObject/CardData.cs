@@ -14,8 +14,9 @@ public class CardData : ScriptableObject
     public bool epic;//卡片是否为稀有卡
     public int attack;//卡片的攻击力
     public Sprite artwork;//卡片的卡面图案
-    public Skills skill;
 
+    public Skills skill;
+    public Sprite skillImage;//卡片技能图案
     public enum Skills
     {
         None,
