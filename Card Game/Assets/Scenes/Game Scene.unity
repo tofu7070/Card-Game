@@ -737,6 +737,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   handCardsID: 
+  graveCardID: 
   handCardsObj: []
   cardPrefabs: {fileID: 4159607169163978988, guid: 10378620926742e429d14d92ab4c9784,
     type: 3}
@@ -816,6 +817,7 @@ GameObject:
   - component: {fileID: 269314349}
   - component: {fileID: 269314348}
   - component: {fileID: 269314346}
+  - component: {fileID: 269314347}
   m_Layer: 5
   m_Name: Right Panel
   m_TagString: Untagged
@@ -860,6 +862,40 @@ MonoBehaviour:
   specialCardPrefabs: {fileID: 731000025}
   deckCards: 
   graveCards: 
+--- !u!114 &269314347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269314344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbd2ff3c42ebc29469c2554970ab0221, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  unitCardNum: 0
+  specialCardNum: 0
+  allCardCollection:
+    typeA: []
+    typeS: []
+  currentCardDeck:
+    typeA:
+    - cardID: 1
+      cardStack: 2
+    - cardID: 2
+      cardStack: 2
+    - cardID: 3
+      cardStack: 1
+    - cardID: 4
+      cardStack: 3
+    - cardID: 5
+      cardStack: 1
+    - cardID: 6
+      cardStack: 2
+    typeS:
+    - cardID: 900
+      cardStack: 2
 --- !u!114 &269314348
 MonoBehaviour:
   m_ObjectHideFlags: 0

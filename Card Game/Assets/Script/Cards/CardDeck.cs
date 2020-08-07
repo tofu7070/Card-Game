@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -13,7 +15,8 @@ using Random = UnityEngine.Random;
 /// </summary>
 public class CardDeck : MonoBehaviour
 {
-    public List<int> handCardsID = new List<int>();
+    public List<int> handCardsID = new List<int>();//手牌
+    public List<int> graveCardID = new List<int>();//墓地牌
     public List<GameObject> handCardsObj = new List<GameObject>();
 
     public GameObject cardPrefabs;
@@ -32,6 +35,8 @@ public class CardDeck : MonoBehaviour
     private RightPanel rp;// 右边ui界面的reference
 
     private TablePanel tp;//桌面的卡牌
+
+    private CardCollection cc;//所有卡牌信息
     // Start is called before the first frame update
     void Start()
     {
@@ -39,6 +44,7 @@ public class CardDeck : MonoBehaviour
         rp = FindObjectOfType<RightPanel>().GetComponent<RightPanel>();
         tp = FindObjectOfType<TablePanel>().GetComponent<TablePanel>();
         tp.cd = this;
+        cc = FindObjectOfType<CardCollection>().GetComponent<CardCollection>();
     }
 
     // Update is called once per frame
@@ -57,6 +63,17 @@ public class CardDeck : MonoBehaviour
         {
             GeneraterCard(6);
             StartCoroutine(EndFixcardSpacing());
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))//测试功能
+        {
+            Debug.Log("Initialize Handcards");
+            InitilizeHandCards();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            SortHandCard();
         }
     }
 
@@ -86,6 +103,61 @@ public class CardDeck : MonoBehaviour
         {
             LoadCard(cardID);
         }
+    }
+
+    #region 初始化
+
+    public void InitilizeHandCards()
+    {
+        handCardsID.Clear();
+        for (int i = 0; i < 10; i++)
+        {
+            //初始化10张手牌
+            int ID = cc.GenerateACard(cc.getYourCard);
+            if(ID != -1)
+                GeneraterCard(ID);
+        }
+    }
+    
+
+    #endregion
+
+    public void SortHandCard() //将手牌排序，特殊牌-单位牌-史诗牌(根据战斗力排序)
+    {
+        //需要使用 handcardObj
+        int num = handCardsObj.Count;
+        Dictionary<GameObject,int> cardDic = new Dictionary<GameObject, int>();//存放卡片的物件和该物件的权重
+        for (int i = 0; i < num; i++)
+        {
+            BriefCardDisplay BCD = handCardsObj[i].GetComponent<BriefCardDisplay>();
+            int weight = 0;
+            if (BCD != null)
+                weight = CardWeight(BCD);
+            else
+                weight = CardWeight(handCardsObj[i].GetComponent<BriefSpecialCardDisplay>());
+            cardDic.Add(handCardsObj[i],weight);
+        }
+        //对dictionary排序
+        var dicSort = cardDic.OrderBy(d => d.Value);
+        //var dicSort = from objDic in cardDic orderby objDic.Value select objDic;
+        int index = 0;
+        foreach (var d in dicSort)
+        {
+            d.Key.transform.SetSiblingIndex(index);
+            index++;
+        }
+
+    }
+    public int CardWeight(BriefCardDisplay bcd)//计算卡片权重多少 用于卡片排序
+    {
+        int num = 100;//单位牌权重从100开始 放置在特殊牌后
+        num += bcd.attackDamage;
+        return num;
+    }
+    public int CardWeight(BriefSpecialCardDisplay bcd)//计算卡片权重多少 用于卡片排序
+    {
+        int num = bcd.cardID - 900;
+        return num;
     }
 
     public void LoadCard(string cardID)//Using unity addressable to instantiate cards
@@ -165,6 +237,7 @@ public class CardDeck : MonoBehaviour
             selectedIndex = 100;
         }
     }
+   
     public void HighLightCards(GameObject selectedCard)//在选择了卡片以后将所选的卡片向上移动(第一次点击)
     {
         for (int i = 0; i < handCardsObj.Count; i++)
@@ -220,8 +293,9 @@ public class CardDeck : MonoBehaviour
             if (handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>() != null)
             {
                 rp.ShowCardInfo(handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card);
-                tp.LockAllYourTables();
-                tp.UnlockYourTable(handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card.cardType);
+                //tp.LockAllYourTables();
+
+                tp.UnlockYourTable(handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>().card.cardType);//解锁卡片所在位置的点击
             }
             else if (handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>() != null)
             {

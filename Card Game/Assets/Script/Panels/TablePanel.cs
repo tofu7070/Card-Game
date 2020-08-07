@@ -355,7 +355,18 @@ public class TablePanel : MonoBehaviour
 
     public void UnlockYourTable(int type)
     {
-        AddTriggerEventsForSlot(CardTypeTransform(type));
+        
+        for (int i = 0; i < 3; i++)
+        {
+            if (i == type)
+            {
+                AddTriggerEventsForSlot(CardTypeTransform(type));
+            }
+            else
+            {
+                RemoveTriggerEventFromSlot(CardTypeTransform(i));
+            }
+        }
     }
     public void UnlockAllYourTables()
     {
@@ -414,7 +425,7 @@ public class TablePanel : MonoBehaviour
     private void HeightlightSlot(Transform slot)
     {
         selectedPanel = slot;
-        Debug.Log("Pointer Enter");
+        //Debug.Log("Pointer Enter");
         Color newcolor = slot.GetComponent<Image>().color;
         newcolor.a = alphaNum + 0.2f;
         slot.GetComponent<Image>().color= newcolor;
@@ -423,7 +434,7 @@ public class TablePanel : MonoBehaviour
     private void DimSlot(Transform slot)
     {
         selectedPanel = null;
-        Debug.Log("Pointer Exit");
+        //Debug.Log("Pointer Exit");
         Color newcolor = slot.GetComponent<Image>().color;
         newcolor.a = alphaNum;
         slot.GetComponent<Image>().color = newcolor;
@@ -443,7 +454,7 @@ public class TablePanel : MonoBehaviour
         if (selectedPanel != null)
         {
             int num = CardTypeTransform(selectedPanel);
-            Debug.Log("Your clicked a Select panel" + num);
+            //Debug.Log("Your clicked a Select panel" + num);
             cd.ReceivePanelInfo(num);
             DimSlot(selectedPanel);
         }
