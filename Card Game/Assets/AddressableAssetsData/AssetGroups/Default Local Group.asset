@@ -17,6 +17,12 @@ MonoBehaviour:
     m_SerializedData: []
   m_GUID: 61a487dbba2dbbc4289f9d436aa946ed
   m_SerializeEntries:
+  - m_GUID: 0bdbe0577cd89bd439012f81b377d104
+    m_Address: Card901
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
   - m_GUID: 60cb973d812fe2443967cce20b114e4d
     m_Address: Card6
     m_ReadOnly: 0
@@ -25,6 +31,12 @@ MonoBehaviour:
     m_TargetAsset: {fileID: 0}
   - m_GUID: 80dfe0c7fc3f94a44891c3bf23d28faf
     m_Address: Card900
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
+  - m_GUID: fc9abe94efbdda44d83dfa669c3f39c5
+    m_Address: Card7
     m_ReadOnly: 0
     m_SerializedLabels: []
     m_MainAsset: {fileID: 0}

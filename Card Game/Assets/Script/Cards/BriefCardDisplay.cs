@@ -25,6 +25,7 @@ public class BriefCardDisplay : MonoBehaviour
     private int currentStack = 1;
     //卡片动画效果
     public Animator numberAnimator;
+    public Animator skillAnimator;
     public GameObject numberPopObj;
     public TextMeshProUGUI numberPopText;
     void Start()
@@ -109,5 +110,10 @@ public class BriefCardDisplay : MonoBehaviour
     public void StopPlayNumberPopAnimation()
     {
         numberPopObj.SetActive(false);
+    }
+
+    public void PlaySummonAnimation()
+    {
+        skillAnimator.SetTrigger("PlaySummon");
     }
 }

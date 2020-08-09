@@ -1,8 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
-using Debug = System.Diagnostics.Debug;
 
 public class CardCollection : MonoBehaviour
 {
@@ -121,13 +119,19 @@ public class CardCollection : MonoBehaviour
     public int GenerateACard(List<int> deck)
     {
         int len = deck.Count;
-        if (len > 0)
+        if (len > 1)
         {
             //int rnd = Random.Range(0, len);
             int rnd = Random.Range(0, 100);
             rnd = rnd % (len - 1);
             int result = deck[rnd];
             deck.RemoveAt(rnd);
+            return result;
+        }
+        else if (len == 1)
+        {
+            int result = deck[0];
+            deck.RemoveAt(0);
             return result;
         }
         else
@@ -142,5 +146,14 @@ public class CardCollection : MonoBehaviour
         //手牌
         public CardSavingData[] currentA = new CardSavingData[0];
         public CardSavingData[] currentS = new CardSavingData[0];
+    }
+
+    public void RemoveYourCards(List<int> cardList)//移除被选定的卡
+    {
+
+        foreach (var cardValue in cardList)
+        {
+            yourCards.Remove(cardValue);
+        }
     }
 }

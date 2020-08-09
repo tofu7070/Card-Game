@@ -425,7 +425,8 @@ MonoBehaviour:
   handCards: {fileID: 0}
   isPowerUp: 0
   stack: 1
-  numberAnimator: {fileID: 878515872363778306}
+  numberAnimator: {fileID: 2645868405350850897}
+  skillAnimator: {fileID: 7396837678662396554}
   numberPopObj: {fileID: 6943577869370505375}
   numberPopText: {fileID: 5762409757873772320}
 --- !u!114 &8322839195315025111
@@ -658,7 +659,7 @@ GameObject:
   - component: {fileID: 365470653384141776}
   - component: {fileID: 8234946864213976348}
   - component: {fileID: 5762409757873772320}
-  - component: {fileID: 878515872363778306}
+  - component: {fileID: 2645868405350850897}
   m_Layer: 5
   m_Name: TeamupText
   m_TagString: Untagged
@@ -806,7 +807,7 @@ MonoBehaviour:
   - {fileID: 0}
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!95 &878515872363778306
+--- !u!95 &2645868405350850897
 Animator:
   serializedVersion: 3
   m_ObjectHideFlags: 0
@@ -837,6 +838,7 @@ GameObject:
   - component: {fileID: 853435250852923642}
   - component: {fileID: 1057215388812151862}
   - component: {fileID: 7827158766731550636}
+  - component: {fileID: 7396837678662396554}
   m_Layer: 5
   m_Name: Skills
   m_TagString: Untagged
@@ -914,6 +916,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ShowMaskGraphic: 1
+--- !u!95 &7396837678662396554
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7802384477913165752}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: e6a93755433898b429341025e0799579, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1 &8636332036285789043
 GameObject:
   m_ObjectHideFlags: 0

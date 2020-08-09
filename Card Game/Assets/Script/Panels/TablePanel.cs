@@ -67,6 +67,8 @@ public class TablePanel : MonoBehaviour
 
     public PowerUP powerUps;//增幅的图标
     private float alphaNum = 0.235f;
+
+    public GameInfoPanel GIP;
     // Start is called before the first frame update
     void Start()
     {
@@ -129,11 +131,12 @@ public class TablePanel : MonoBehaviour
         BriefCardDisplay CD = card.GetComponent<BriefCardDisplay>();
         CD.card = data;
         CD.InistiateCard();
+        FixCardDamage(CD, data.cardType);
         CardTypePanel(data.cardType).Add(card);
         FixCardSpacing(data.cardType);
         LockAllYourTables();//放置完成了卡片以后关闭event trigger
         //此处添加技能的判定
-        ActivateCardSkill(CD.skills, data.cardType);
+        ActivateCardSkill(CD.skills, data.cardType, data, card);
         StartCoroutine(DoingCardCacaulation(data.cardType));
     }
 
@@ -143,26 +146,28 @@ public class TablePanel : MonoBehaviour
         BriefCardDisplay CD = card.GetComponent<BriefCardDisplay>();
         CD.card = data;
         CD.InistiateCard();
+        FixCardDamage(CD, num);
         CardTypePanel(num).Add(card);
         FixCardSpacing(num);
         if (powerUps.ybool[num])
             CD.isPowerUp = true;
         LockAllYourTables();//放置完成了卡片以后关闭event trigger
         //此处添加技能的判定
-        ActivateCardSkill(CD.skills, num);
+        ActivateCardSkill(CD.skills, num, data, card);
         StartCoroutine(DoingCardCacaulation(num));
     }
 
     public void ReceiveACard(SpecialCardData data,int num)//选择一个位置以后放置特护的卡片
+    {        
+        ActivateSpecialCard(data,num);
+    }
+
+    private void FixCardDamage(BriefCardDisplay BCD, int type)
     {
-        powerUps.ybool[num] = true;//将增幅的标记改为true
-        powerUps.yUP[num].SetActive(true);
-        foreach (var card in CardTypePanel(num))
+        if (GIP.debuffs[type])
         {
-            card.GetComponent<BriefCardDisplay>().isPowerUp = true;
-        }       
-        LockAllYourTables();//放置完成了卡片以后关闭event trigger
-        StartCoroutine(DoingCardCacaulation(num));
+            BCD.DeBuff();
+        }
     }
 
     #region 获取信息
@@ -279,7 +284,7 @@ public class TablePanel : MonoBehaviour
         CardNumberText(type).text = num.ToString();
     }
 
-    public void ActivateCardSkill(CardData.Skills skill, int type)//根据卡片技能进行计算
+    public void ActivateCardSkill(CardData.Skills skill, int type, CardData data, GameObject card)//根据卡片技能进行计算
     {
         switch (skill)
         {
@@ -288,50 +293,167 @@ public class TablePanel : MonoBehaviour
                 return;
             case CardData.Skills.Groupup:
                 //进行卡片的组合技能计算
-                Dictionary<string,int> cardDic = new Dictionary<string, int>();//字符串为卡片的名称，整形为数量
-                bool haveGroupCard = false;
-                foreach (var card in CardTypePanel(type))
+                GroupUpSkill(type);               
+                break;
+            case CardData.Skills.Summon:
+                //SummonSkill(type, data);
+                StartCoroutine(SummonSkillActivate(data, card));
+                break;
+        }
+    }
+
+    private void GroupUpSkill(int type)
+    {
+        Dictionary<string, int> cardDic = new Dictionary<string, int>();//字符串为卡片的名称，整形为数量
+        bool haveGroupCard = false;
+        foreach (var card in CardTypePanel(type))
+        {
+            BriefCardDisplay BCD = card.GetComponent<BriefCardDisplay>();
+            if (BCD != null)
+            {
+                string cardName = card.GetComponent<BriefCardDisplay>().name;
+                if (cardDic.ContainsKey(cardName))
                 {
-                    BriefCardDisplay BCD = card.GetComponent<BriefCardDisplay>();
-                    if (BCD != null)
+                    cardDic[cardName] += 1;
+                    haveGroupCard = true;
+                }
+                else
+                {
+                    cardDic.Add(cardName, 1);
+                }
+            }
+        }
+        if (haveGroupCard)
+        {
+            List<BriefCardDisplay> BCDs = new List<BriefCardDisplay>();
+            foreach (var card in CardTypePanel(type))
+            {
+                BriefCardDisplay BCD = card.GetComponent<BriefCardDisplay>();
+                if (BCD != null)
+                {
+                    string cardName = card.GetComponent<BriefCardDisplay>().name;
+                    if (cardDic[cardName] > 1)
                     {
-                        string cardName = card.GetComponent<BriefCardDisplay>().name;
-                        if (cardDic.ContainsKey(cardName))
-                        {
-                            cardDic[cardName] += 1;
-                            haveGroupCard = true;
-                        }
-                        else
-                        {
-                            cardDic.Add(cardName,1);
-                        }
+                        BCD.stack = cardDic[cardName];//修改同名卡片堆积数量
+                        BCDs.Add(BCD);//登记卡片
                     }
                 }
-                if (haveGroupCard)
-                {
-                    List<BriefCardDisplay> BCDs = new List<BriefCardDisplay>();
-                    foreach (var card in CardTypePanel(type))
-                    {
-                        BriefCardDisplay BCD = card.GetComponent<BriefCardDisplay>();
-                        if (BCD != null)
-                        {
-                            string cardName = card.GetComponent<BriefCardDisplay>().name;
-                            if (cardDic[cardName] > 1)
-                            {
-                                BCD.stack = cardDic[cardName];//修改同名卡片堆积数量
-                                BCDs.Add(BCD);//登记卡片
-                            }     
-                        }
-                    }
-                    //在这里添加卡片登记以后的动画效果 如果是相同的数值则不播放动画
-                    foreach (var cardBDC in BCDs)
-                    {
-                        cardBDC.PlayNumberPopAnimation();
-                    }
-                }
-                
+            }
+            //在这里添加卡片登记以后的动画效果 如果是相同的数值则不播放动画
+            foreach (var cardBDC in BCDs)
+            {
+                cardBDC.PlayNumberPopAnimation();
+            }
+        }
+    }
+
+    IEnumerator SummonSkillActivate(CardData data, GameObject card)
+    {
+        BriefCardDisplay BCD = card.GetComponent<BriefCardDisplay>();
+        BCD.PlaySummonAnimation();
+        yield return new WaitForSeconds(1f);
+        cd.AcquireAllSameNameCard(data);
+    }
+
+    private void SummonSkill(int type, CardData data)//不使用代码
+    {
+        //通过呼叫carddeck 获取存在的手牌
+        //再通过carddeck 获取牌组中的同名牌
+        //再获取所有可以使用的牌以后 生成一个 array 传入TablePanel
+        //所有的牌上场了以后播放组合动画
+        cd.AcquireAllSameNameCard(data);
+
+    }
+
+    public void ReceiveSummonCards(List<CardData> datas)//接收从Card Deck传来的信息
+    {
+        if (datas.Count == 0)
+            return;
+        int type = 0;
+        List<BriefCardDisplay> BCDs = new List<BriefCardDisplay>();
+        foreach (var data in datas)
+        {
+            type = data.cardType;
+            GameObject card = Instantiate(cardPrefabs, CardTypeTransform(type));
+            BriefCardDisplay CD = card.GetComponent<BriefCardDisplay>();
+            BCDs.Add(CD);
+            CD.card = data;
+            FixCardDamage(CD,type);
+            CD.InistiateCard();
+            CardTypePanel(type).Add(card);
+            FixCardSpacing(type);
+        }
+
+        foreach (var BCD in BCDs)
+        {
+            BCD.PlaySummonAnimation();
+        }
+        StartCoroutine(DoingCardCacaulation(type));
+    }
+
+    private void ActivateSpecialCard(SpecialCardData data, int type)
+    {
+        SpecialCardData.Function skills = data.function;
+        switch (skills)
+        {
+            case SpecialCardData.Function.PowerUP:
+                PowerUpFunction(type);
+                break;
+            case SpecialCardData.Function.Frost:
+                FrostFunction(data);
+                DebuffTypeUnit(type);
+                StartCoroutine(DoingCardCacaulation(type));
+                break;
+            case SpecialCardData.Function.Fog:
+                break;
+            case SpecialCardData.Function.Rain:
+                break;
+        }
+    }
+
+    private void PowerUpFunction(int type)//加成选择区域的牌组攻击力
+    {
+        powerUps.ybool[type] = true;//将增幅的标记改为true
+        powerUps.yUP[type].SetActive(true);
+        foreach (var card in CardTypePanel(type))
+        {
+            card.GetComponent<BriefCardDisplay>().isPowerUp = true;
+        }
+        LockAllYourTables();//放置完成了卡片以后关闭event trigger
+        StartCoroutine(DoingCardCacaulation(type));
+    }
+
+    private void FrostFunction(SpecialCardData data)
+    {
+        GIP.ReceiveACard(data);
+
+    }
+
+    private void DebuffTypeUnit(int type)
+    {
+        switch (type)
+        {
+            case 0://冰霜
+                DebuffCards(panelCards.op1);
+                DebuffCards(panelCards.y1);
+                break;
+            case 1:
+                break;
+            case 2:
                 break;
 
+        }
+    }
+
+    private void DebuffCards(List<GameObject> cards)
+    {
+        foreach (var card in cards)
+        {
+            BriefCardDisplay BCD = card.GetComponent<BriefCardDisplay>();
+            if (BCD != null)
+            {
+                BCD.DeBuff();
+            }
         }
     }
 
@@ -447,7 +569,7 @@ public class TablePanel : MonoBehaviour
         return num;
     }
 
-    private Transform selectedPanel;
+    private Transform selectedPanel;//目前高亮的区域
 
     private void ClickSelectedPanel()//改写的点击方法 
     {

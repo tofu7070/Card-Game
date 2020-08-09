@@ -37,6 +37,8 @@ public class CardDeck : MonoBehaviour
     private TablePanel tp;//桌面的卡牌
 
     private CardCollection cc;//所有卡牌信息
+
+    public GameInfoPanel GIP;
     // Start is called before the first frame update
     void Start()
     {
@@ -88,7 +90,7 @@ public class CardDeck : MonoBehaviour
     public void SpecialCard()//Start with 900
     {
         //Debug.Log("Generate a special card ");
-        GeneraterCard(900);
+        GeneraterCard(901);
         StartCoroutine(EndFixcardSpacing());
     }
 
@@ -299,13 +301,22 @@ public class CardDeck : MonoBehaviour
             }
             else if (handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>() != null)
             {
-                rp.ShowCardInfo(handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>().card);
+                BriefSpecialCardDisplay BSCD = handCardsObj[selectedIndex].GetComponent<BriefSpecialCardDisplay>();
+                rp.ShowCardInfo(BSCD.card);
                 //开启桌面的点击功能
-                tp.UnlockAllYourTables();
+                if (BSCD.card.function == SpecialCardData.Function.PowerUP)
+                {
+                    tp.UnlockAllYourTables();
+                }
+                else
+                {
+                    tp.UnlockYourTable(GIP.ConvertCardType(BSCD.card));
+                }
+                GIP.RegesterPanelEvent();//开启天气界面的点击
             }
         }
     }
-
+    
     public void ReceivePanelInfo(int num)//得到TablePanel传来的值并给相对应的位置发送一张卡片
     {
         BriefCardDisplay BCD = handCardsObj[selectedIndex].GetComponent<BriefCardDisplay>();
@@ -340,5 +351,67 @@ public class CardDeck : MonoBehaviour
         rp.HideCardInfo();
     }
 
+    public void AcquireAllSameNameCard(CardData data)//从 TablePanel传入数据 获取同名的牌并将牌移除
+    {
+        StartCoroutine(AcquireSameCards(data));        
+    }
+
+    IEnumerator AcquireSameCards(CardData data)
+    {
+        //获取手牌
+        List<CardData> result = new List<CardData>();
+        List<GameObject> deleteCards = new List<GameObject>();
+        string name = data.name;
+        foreach (var card in handCardsObj)
+        {
+            BriefCardDisplay bcd = card.GetComponent<BriefCardDisplay>();
+            if (bcd != null)
+            {
+                if (bcd.card.name == name)
+                {
+                    result.Add(bcd.card);
+                    deleteCards.Add(card);
+                }
+            }
+        }
+
+        //获取牌组的牌
+        List<int> deckCards = cc.getYourCard;
+        List<int> removeCards = new List<int>();
+        foreach (var cardID in deckCards)
+        {
+            if (cardID < 900)
+            {
+                string ID = "Card" + cardID.ToString();
+                Addressables.LoadAssetAsync<CardData>(ID).Completed += OnLoadDone;
+
+                void OnLoadDone(AsyncOperationHandle<CardData> handle)
+                {
+                    if (handle.Status == AsyncOperationStatus.Succeeded)
+                    {
+                        CardData card = handle.Result;
+                        if (card.name.Equals(name))
+                        {
+                            result.Add(card);
+                            removeCards.Add(cardID);
+                        }
+                    }
+                    else
+                        Debug.Log("<color=yellow> Can not find Card Data </color>");
+                }
+            }
+        }
+
+        foreach (var card in deleteCards)//移除手牌
+        {
+            handCardsObj.Remove(card);
+            Destroy(card);
+        }
+        yield return null;
+        cc.RemoveYourCards(removeCards);
+
+        yield return new WaitForEndOfFrame();
+        tp.ReceiveSummonCards(result);
+    }
 
 }
